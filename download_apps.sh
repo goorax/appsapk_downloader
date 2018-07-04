@@ -1,11 +1,14 @@
 #!/bin/bash
 
-readonly BASIC_URL='http://www.appsapk.com/'
+readonly BASIC_URL='https://www.appsapk.com/'
 readonly ROOT_URL=$BASIC_URL'android/all-apps/page/'
-readonly APP_PATTERN='<a href="http://www.appsapk.com/.*/" title='
+readonly APP_PATTERN='<a href="https://www.appsapk.com/.*/" title='
 readonly DOWNLOAD_PATTERN='<p><a class="download" rel="nofollow" href=".*">Download APK</a></p>'
 readonly WHITESPACE_REPLACE='s/ /%20/g'
 readonly SLASH='/'
+
+
+show_usage() { echo "Usage: $0 -m [2..100] max. pages to crawl" 1>&2; exit 1; }
 
 receive_content() {
     content=$(curl -s $ROOT_URL$1$SLASH | egrep -i "$APP_PATTERN" | cut -d/ -f4 | uniq)
@@ -17,13 +20,13 @@ receive_apk_url() {
 
 download_apk() {
     if [[ $1 == *apk ]]; then
-	wget $1
+	wget $1 
     fi
 }
 
 crawl_repository() {	   
-    for site in {1..10}
-	do
+    for site in $(seq 1 $max);
+    do
    	receive_content $site
         for app_entry in $content
             do
@@ -33,6 +36,20 @@ crawl_repository() {
     done
 }
 
+while getopts ":m:" opt; do
+    max=2
+    case "${opt}" in
+            m)
+                max=$OPTARG
+                ;;
+            \?)
+                show_usage
+                ;;
+            :)
+                echo "Invalid option: -$OPTARG requires an integer argument" >&2
+                ;;
+    esac
+done
 crawl_repository
 
 
